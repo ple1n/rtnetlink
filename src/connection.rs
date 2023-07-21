@@ -17,11 +17,13 @@ pub fn new_connection() -> io::Result<(
     Handle,
     UnboundedReceiver<(NetlinkMessage<RtnlMessage>, SocketAddr)>,
 )> {
-    new_connection_with_socket()
+    new_connection_with_socket(())
 }
 
 #[allow(clippy::type_complexity)]
-pub fn new_connection_with_socket<S>() -> io::Result<(
+pub fn new_connection_with_socket<S>(
+    ctx: <S as AsyncSocket>::T,
+) -> io::Result<(
     Connection<RtnlMessage, S>,
     Handle,
     UnboundedReceiver<(NetlinkMessage<RtnlMessage>, SocketAddr)>,
@@ -30,6 +32,6 @@ where
     S: AsyncSocket,
 {
     let (conn, handle, messages) =
-        netlink_proto::new_connection_with_socket(NETLINK_ROUTE)?;
+        netlink_proto::new_connection_with_socket(NETLINK_ROUTE, ctx)?;
     Ok((conn, Handle::new(handle), messages))
 }

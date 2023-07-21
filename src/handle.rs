@@ -15,7 +15,7 @@ use crate::{
 pub struct Handle(ConnectionHandle<RtnlMessage>);
 
 impl Handle {
-    pub(crate) fn new(conn: ConnectionHandle<RtnlMessage>) -> Self {
+    pub fn new(conn: ConnectionHandle<RtnlMessage>) -> Self {
         Handle(conn)
     }
 
