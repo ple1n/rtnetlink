@@ -82,7 +82,9 @@ async fn dump_links(handle: Handle) -> Result<(), Error> {
         for nla in msg.nlas.into_iter() {
             if let Nla::IfName(name) = nla {
                 println!("found link {} ({})", msg.header.index, name);
-                continue 'outer;
+                // continue 'outer;
+            } else {
+                dbg!(nla);
             }
         }
         eprintln!("found link {}, but the link has no name", msg.header.index);

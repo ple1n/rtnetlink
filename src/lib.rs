@@ -38,3 +38,12 @@ pub use crate::neighbour::*;
 pub mod constants;
 
 mod macros;
+
+// should export all dependencies. 
+
+pub use netlink_sys::proxy as proxy;
+pub use netlink_sys;
+pub use netlink_proto;
+pub use netlink_packet_core;
+pub use netlink_packet_route;
+pub use netlink_packet_utils;

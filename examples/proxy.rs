@@ -71,7 +71,7 @@ async fn main() -> AResult<()> {
                 Ok(())
             });
 
-            let (mut handle, _) = rx.await?;
+            let (handle, _) = rx.await?;
 
             let rthandle = Handle::new(handle);
             dump_links(rthandle).await?;
