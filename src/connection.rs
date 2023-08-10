@@ -22,7 +22,7 @@ pub fn new_connection() -> io::Result<(
 
 #[allow(clippy::type_complexity)]
 pub fn new_connection_with_socket<S>(
-    ctx: <S as AsyncSocket>::T,
+    ctx: <S as AsyncSocket>::T<'_>,
 ) -> io::Result<(
     Connection<RtnlMessage, S>,
     Handle,

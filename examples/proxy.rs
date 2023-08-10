@@ -1,6 +1,9 @@
 use anyhow::{Ok, Result as AResult};
+use nix::sched::CloneFlags;
 use rtnetlink::Handle;
-use std::{convert::TryInto, env, error::Error, path::PathBuf};
+use std::{
+    convert::TryInto, env, error::Error, os::fd::AsRawFd, path::PathBuf,
+};
 use tokio::sync::oneshot;
 
 use netlink_proto::new_connection_with_socket;
@@ -36,15 +39,20 @@ async fn main() -> AResult<()> {
     }
     match parsed {
         WhoIAM::Hub => {
+            let file = std::fs::File::open("/run/netns/geph1".to_owned())?;
+            nix::sched::setns(file.as_raw_fd(), CloneFlags::CLONE_NEWNET)?;
+            let stat = nix::sys::stat::fstat(file.as_raw_fd())?;
             let (sx, rx) = oneshot::channel::<_>();
-            tokio::spawn(async {
+            tokio::spawn(async move {
                 // put all this in an async block, because it has to be 'static.
                 let t1 = async {
+                    println!("listener await");
                     let mut ctx = ProxyCtx::new(p)?;
                     ctx.get_subs(1).await?;
+                    println!("got conn");
                     let mut params = ProxyCtxP {
                         shared: &mut ctx,
-                        inode: proxy::get_inode_self_ns()?,
+                        inode: stat.st_ino,
                     };
 
                     let (mut conn, handle, m) =
@@ -52,17 +60,21 @@ async fn main() -> AResult<()> {
                             _,
                             ProxySocket<{ ProxySocketType::PollRecvFrom }>,
                         >(NETLINK_ROUTE, &mut params)?;
+                    println!("init conn");
                     conn.socket_mut().init().await;
+                    println!("send conn");
                     sx.send((handle, m)).unwrap();
                     conn.await;
 
                     Ok(())
                 };
+
                 let t2 = async {
                     let x: u8 = unsafe { std::mem::transmute(WhoIAM::Proxy) };
                     let mut cmd = Command::new(std::env::current_exe()?);
                     cmd.arg(x.to_string());
-                    let h = cmd.spawn()?;
+                    let mut h = cmd.spawn()?;
+                    h.wait().await?;
                     Ok(())
                 };
                 // XXX: t1 must be polled before t2 I guess
@@ -74,9 +86,14 @@ async fn main() -> AResult<()> {
             let (handle, _) = rx.await?;
 
             let rthandle = Handle::new(handle);
+
+            println!("dump links");
             dump_links(rthandle).await?;
         }
         WhoIAM::Proxy => {
+            let file = std::fs::File::open("/run/netns/geph1".to_owned())?;
+            nix::sched::setns(file.as_raw_fd(), CloneFlags::CLONE_NEWNET)?;
+            println!("enter ns");
             proxy::proxy::<{ ProxySocketType::PollRecvFrom }>(p).await?;
         }
     }
