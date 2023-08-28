@@ -13,9 +13,7 @@ async fn main() -> Result<(), String> {
     }
     let ns_name = &args[1];
 
-    NetworkNamespace::add(ns_name.to_string())
-        .await
-        .map_err(|e| format!("{e}"))
+    NetworkNamespace::add(ns_name.to_string()).map_err(|e| format!("{e}"))
 }
 
 fn usage() {
