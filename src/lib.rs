@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: MIT
 
+// #![feature(custom_inner_attributes)]
+
 //! This crate provides methods to manipulate networking resources (links,
 //! addresses, arp tables, route tables) via the netlink protocol.
 
-#![allow(clippy::module_inception)]
+// #![allow(clippy::module_inception)]
+
+#![feature(custom_inner_attributes)]
+#![feature(proc_macro_hygiene)]
 
 mod handle;
 pub use crate::handle::*;
@@ -41,7 +46,6 @@ mod macros;
 
 // should export all dependencies. 
 
-pub use netlink_sys::proxy as proxy;
 pub use netlink_sys;
 pub use netlink_proto;
 pub use netlink_packet_core;

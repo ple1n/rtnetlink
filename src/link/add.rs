@@ -3,6 +3,7 @@
 use std::net::{Ipv4Addr, Ipv6Addr};
 
 use futures::stream::StreamExt;
+use masync::maybe_async::{msync, masyn};
 use netlink_packet_core::{
     NetlinkMessage, NLM_F_ACK, NLM_F_CREATE, NLM_F_EXCL, NLM_F_REPLACE,
     NLM_F_REQUEST,
@@ -23,6 +24,7 @@ pub struct BondAddRequest {
     info_data: Vec<InfoBond>,
 }
 
+#[masync::maybe_async::maybe]
 impl BondAddRequest {
     /// Execute the request.
     pub async fn execute(self) -> Result<(), Error> {
@@ -296,7 +298,7 @@ pub struct VxlanAddRequest {
     request: LinkAddRequest,
     info_data: Vec<InfoVxlan>,
 }
-
+#[masync::maybe_async::maybe]
 impl VxlanAddRequest {
     /// Execute the request.
     pub async fn execute(self) -> Result<(), Error> {
@@ -531,7 +533,7 @@ impl LinkAddRequest {
             replace: false,
         }
     }
-
+    #[masyn]
     /// Execute the request.
     pub async fn execute(self) -> Result<(), Error> {
         let LinkAddRequest {
@@ -549,7 +551,10 @@ impl LinkAddRequest {
         }
         Ok(())
     }
-
+    #[msync]
+    pub fn execute(self) -> Result<(), Error> {
+        Ok(())
+    }
     /// Return a mutable reference to the request message.
     ///
     /// # Example

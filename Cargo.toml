@@ -34,6 +34,7 @@ nix = { version = "0.26.1", default-features = false, features = [
 tokio = { version = "1.0.1", features = ["rt"], optional = true }
 async-global-executor = { version = "2.0.2", optional = true }
 anyhow = "1.0.72"
+masync = { path = "../maybe-async-rs/masync" }
 
 [dev-dependencies]
 env_logger = "0.10.0"

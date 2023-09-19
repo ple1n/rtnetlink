@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 
 use futures::stream::StreamExt;
+use masync::{
+    maybe_async::{masyn, msync},
+    MockTryStream,
+};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
 use netlink_packet_route::{LinkMessage, RtnlMessage};
 
@@ -17,7 +21,7 @@ impl LinkDelRequest {
         message.header.index = index;
         LinkDelRequest { handle, message }
     }
-
+    #[masyn]
     /// Execute the request
     pub async fn execute(self) -> Result<(), Error> {
         let LinkDelRequest {
@@ -34,6 +38,10 @@ impl LinkDelRequest {
         Ok(())
     }
 
+    #[msync]
+    pub fn execute(self) -> Result<(), Error> {
+        Ok(())
+    }
     /// Return a mutable reference to the request
     pub fn message_mut(&mut self) -> &mut LinkMessage {
         &mut self.message

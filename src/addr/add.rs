@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 use futures::stream::StreamExt;
+use masync::maybe_async::{msync, masyn};
 use std::net::{IpAddr, Ipv4Addr};
 
 use netlink_packet_core::{
@@ -89,7 +90,7 @@ impl AddressAddRequest {
             ..self
         }
     }
-
+    #[masyn]
     /// Execute the request.
     pub async fn execute(self) -> Result<(), Error> {
         let AddressAddRequest {
@@ -107,7 +108,10 @@ impl AddressAddRequest {
         }
         Ok(())
     }
-
+    #[msync]
+    pub fn execute(self) -> anyhow::Result<()> {
+        Ok(())
+    }
     /// Return a mutable reference to the request message.
     pub fn message_mut(&mut self) -> &mut AddressMessage {
         &mut self.message
