@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 use futures::stream::StreamExt;
-use masync::{maybe_async::{masyn, msync}, MockTryStream};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
 use netlink_packet_route::{AddressMessage, RtnlMessage};
 
@@ -16,7 +15,7 @@ impl AddressDelRequest {
     pub(crate) fn new(handle: Handle, message: AddressMessage) -> Self {
         AddressDelRequest { handle, message }
     }
-    #[masyn]
+ 
     /// Execute the request
     pub async fn execute(self) -> Result<(), Error> {
         let AddressDelRequest {
@@ -33,11 +32,7 @@ impl AddressDelRequest {
         Ok(())
     }
 
-    #[msync]
-    pub fn execute(self) -> Result<(), Error> {
-        Ok(())
-    }
-
+   
     pub fn message_mut(&mut self) -> &mut AddressMessage {
         &mut self.message
     }

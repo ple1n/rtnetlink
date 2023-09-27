@@ -3,10 +3,6 @@
 use std::os::unix::io::RawFd;
 
 use futures::stream::StreamExt;
-use masync::{
-    maybe_async::{masyn, msync},
-    MockTryStream,
-};
 use netlink_packet_core::{
     NetlinkMessage, NLM_F_ACK, NLM_F_CREATE, NLM_F_EXCL, NLM_F_REQUEST,
 };
@@ -27,7 +23,7 @@ impl LinkSetRequest {
         message.header.index = index;
         LinkSetRequest { handle, message }
     }
-    #[masyn]
+ 
     /// Execute the request
     pub async fn execute(self) -> Result<(), Error> {
         let LinkSetRequest {
@@ -45,10 +41,7 @@ impl LinkSetRequest {
         Ok(())
     }
 
-    #[msync]
-    pub fn execute(self) -> anyhow::Result<()> {
-        Ok(())
-    }
+
     /// Return a mutable reference to the request
     pub fn message_mut(&mut self) -> &mut LinkMessage {
         &mut self.message

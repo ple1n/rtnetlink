@@ -5,10 +5,7 @@ use futures::{
     stream::{StreamExt, TryStream, TryStreamExt},
     FutureExt,
 };
-use masync::{
-    maybe_async::{masyn, msync},
-    MockTryStream,
-};
+
 use std::net::IpAddr;
 
 use netlink_packet_core::{NetlinkMessage, NLM_F_DUMP, NLM_F_REQUEST};
@@ -35,7 +32,7 @@ impl AddressGetRequest {
         &mut self.message
     }
 
-    #[masyn]
+ 
     pub fn execute(self) -> impl TryStream<Ok = AddressMessage, Error = Error> {
         let AddressGetRequest {
             mut handle,
@@ -57,11 +54,6 @@ impl AddressGetRequest {
                 future::err::<AddressMessage, Error>(e).into_stream(),
             ),
         }
-    }
-
-    #[msync]
-    pub fn execute(self) -> MockTryStream<Option<AddressMessage>> {
-        Default::default()
     }
 
     /// Return only the addresses of the given interface.

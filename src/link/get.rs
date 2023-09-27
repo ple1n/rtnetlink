@@ -5,10 +5,6 @@ use futures::{
     stream::{StreamExt, TryStream},
     FutureExt,
 };
-use masync::{
-    maybe_async::{masyn, maybe, msync},
-    MockTryStream,
-};
 use netlink_packet_core::{NetlinkMessage, NLM_F_DUMP, NLM_F_REQUEST};
 use netlink_packet_route::{link::nlas::Nla, LinkMessage, RtnlMessage};
 
@@ -42,7 +38,7 @@ impl LinkGetRequest {
         self
     }
 
-    #[masyn]
+ 
     /// Execute the request
     pub fn execute(self) -> impl TryStream<Ok = LinkMessage, Error = Error> {
         let LinkGetRequest {
@@ -70,10 +66,7 @@ impl LinkGetRequest {
         }
     }
 
-    #[msync]
-    pub fn execute(self) -> MockTryStream<Option<LinkMessage>> {
-        Default::default()
-    }
+   
 
     /// Return a mutable reference to the request
     pub fn message_mut(&mut self) -> &mut LinkMessage {

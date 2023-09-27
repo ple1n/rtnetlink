@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 use futures::stream::StreamExt;
-use masync::maybe_async::msync;
 use std::{
     marker::PhantomData,
     net::{Ipv4Addr, Ipv6Addr},
@@ -130,7 +129,6 @@ impl<T> RouteAddRequest<T> {
             ..self
         }
     }
-    #[masync::maybe_async::masyn]
     /// Execute the request.
     pub async fn execute(self) -> Result<(), Error> {
         let RouteAddRequest {
@@ -149,10 +147,7 @@ impl<T> RouteAddRequest<T> {
         }
         Ok(())
     }
-    #[msync]
-    pub fn execute(self) -> anyhow::Result<()> {
-        Ok(())
-    }
+
     /// Return a mutable reference to the request message.
     pub fn message_mut(&mut self) -> &mut RouteMessage {
         &mut self.message
