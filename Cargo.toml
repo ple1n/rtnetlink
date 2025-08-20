@@ -21,8 +21,8 @@ futures = "0.3.11"
 log = "0.4.8"
 thiserror = "1"
 netlink-sys = { path = "../netlink-sys" }
-netlink-packet-utils = { version = "0.5" }
-netlink-packet-route = { version = "0.17" }
+netlink-packet-utils = { path = "../netlink-packet-utils" }
+netlink-packet-route = { path = "../netlink-packet-route" }
 netlink-packet-core = { version = "0.7" }
 netlink-proto = { default-features = false, path = "../netlink-proto" }
 nix = { version = "0.26.1", default-features = false, features = [
@@ -38,6 +38,10 @@ anyhow = "1.0.72"
 [dev-dependencies]
 env_logger = "0.10.0"
 ipnetwork = "0.18.0"
-tokio = { version = "1.0.1", features = ["macros", "rt", "rt-multi-thread", "process"] }
+tokio = { version = "1.0.1", features = [
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "process",
+] }
 async-std = { version = "1.9.0", features = ["attributes"] }
-
