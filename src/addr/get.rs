@@ -3,12 +3,9 @@
 use std::net::IpAddr;
 
 use futures::{
-    future::{self, Either},
-    stream::{Stream, StreamExt, TryStreamExt},
-    FutureExt,
+    FutureExt, TryStream, future::{self, Either}, stream::{Stream, StreamExt, TryStreamExt}
 };
 
-use std::net::IpAddr;
 
 use netlink_packet_core::{NetlinkMessage, NLM_F_DUMP, NLM_F_REQUEST};
 use netlink_packet_route::{
@@ -37,12 +34,8 @@ impl AddressGetRequest {
         &mut self.message
     }
 
-<<<<<<< HEAD
  
     pub fn execute(self) -> impl TryStream<Ok = AddressMessage, Error = Error> {
-=======
-    pub fn execute(self) -> impl Stream<Item = Result<AddressMessage, Error>> {
->>>>>>> upst/main
         let AddressGetRequest {
             mut handle,
             message,

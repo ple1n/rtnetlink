@@ -17,7 +17,7 @@ use crate::{
 pub struct Handle(ConnectionHandle<RouteNetlinkMessage>);
 
 impl Handle {
-    pub fn new(conn: ConnectionHandle<RtnlMessage>) -> Self {
+    pub(crate) fn new(conn: ConnectionHandle<RouteNetlinkMessage>) -> Self {
         Handle(conn)
     }
 

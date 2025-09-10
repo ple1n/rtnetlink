@@ -211,7 +211,7 @@ mod test {
             let last = File::open(Path::new(SELF_NS_PATH)).unwrap();
 
             // create new ns
-            NetworkNamespace::add(path.to_string()).unwrap();
+            NetworkNamespace::add(path.to_string()).await.unwrap();
 
             // entry new ns
             let ns_path = Path::new(NETNS_PATH);

@@ -23,16 +23,6 @@ mod errors;
 mod handle;
 mod link;
 mod macros;
-<<<<<<< HEAD
-
-// should export all dependencies. 
-
-pub use netlink_sys;
-pub use netlink_proto;
-pub use netlink_packet_core;
-pub use netlink_packet_route;
-pub use netlink_packet_utils;
-=======
 mod neighbour;
 #[cfg(not(target_os = "freebsd"))]
 mod ns;
@@ -77,4 +67,3 @@ pub use crate::{
     },
     rule::{RuleAddRequest, RuleDelRequest, RuleGetRequest, RuleHandle},
 };
->>>>>>> upst/main

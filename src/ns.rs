@@ -58,20 +58,9 @@ pub const NONE_FS: &str = "none";
 pub struct NetworkNamespace();
 
 impl NetworkNamespace {
-    /// Get the named ns path conforming to `ip netns`
-    pub fn path_of(ns_name: String) -> PathBuf {
-        let mut p = PathBuf::from(NETNS_PATH);
-        p.push(ns_name);
-        p
-    }
     /// Add a new network namespace.
     /// This is equivalent to `ip netns add NS_NAME`.
-    pub fn add(ns_name: String) -> Result<(), Error> {
-        let p = Self::path_of(ns_name);
-        Self::add_w_path(&p)
-    }
-
-    pub fn add_w_path(ns: &Path) -> Result<(), Error> {
+    pub async fn add(ns_name: String) -> Result<(), Error> {
         // Forking process to avoid moving caller into new namespace
         NetworkNamespace::prep_for_fork()?;
         log::trace!("Forking...");
@@ -80,7 +69,7 @@ impl NetworkNamespace {
                 NetworkNamespace::parent_process(child)
             }
             Ok(ForkResult::Child) => {
-                NetworkNamespace::child_process(ns);
+                NetworkNamespace::child_process(ns_name);
             }
             Err(e) => {
                 let err_msg = format!("Fork failed: {e}");
@@ -91,28 +80,32 @@ impl NetworkNamespace {
 
     /// Remove a network namespace
     /// This is equivalent to `ip netns del NS_NAME`.
-    pub fn del(ns_name: String) -> Result<(), Error> {
-        Self::del_path(&Self::path_of(ns_name))
-    }
+    pub async fn del(ns_name: String) -> Result<(), Error> {
+        try_spawn_blocking(move || {
+            let mut netns_path = String::new();
+            netns_path.push_str(NETNS_PATH);
+            netns_path.push_str(&ns_name);
+            let ns_path = Path::new(&netns_path);
 
-    pub fn del_path(ns_path: &Path) -> Result<(), Error> {
-        if nix::mount::umount2(ns_path, nix::mount::MntFlags::MNT_DETACH)
-            .is_err()
-        {
-            let err_msg = String::from(
-                "Namespace unmount failed (are you running as root?)",
-            );
-            return Err(Error::NamespaceError(err_msg));
-        }
+            if nix::mount::umount2(ns_path, nix::mount::MntFlags::MNT_DETACH)
+                .is_err()
+            {
+                let err_msg = String::from(
+                    "Namespace unmount failed (are you running as root?)",
+                );
+                return Err(Error::NamespaceError(err_msg));
+            }
 
-        if nix::unistd::unlink(ns_path).is_err() {
-            let err_msg = String::from(
-                "Namespace file remove failed (are you running as root?)",
-            );
-            return Err(Error::NamespaceError(err_msg));
-        }
+            if nix::unistd::unlink(ns_path).is_err() {
+                let err_msg = String::from(
+                    "Namespace file remove failed (are you running as root?)",
+                );
+                return Err(Error::NamespaceError(err_msg));
+            }
 
-        Ok(())
+            Ok(())
+        })
+        .await
     }
 
     pub fn prep_for_fork() -> Result<(), Error> {
@@ -157,10 +150,11 @@ impl NetworkNamespace {
         }
     }
 
-    fn child_process(ns: &Path) -> ! {
+    fn child_process(ns_name: String) -> ! {
         let res = std::panic::catch_unwind(|| -> Result<(), Error> {
-            NetworkNamespace::child_process_create_ns(ns)?;
-            NetworkNamespace::unshare_processing(ns)?;
+            let netns_path =
+                NetworkNamespace::child_process_create_ns(ns_name)?;
+            NetworkNamespace::unshare_processing(netns_path)?;
             Ok(())
         });
         match res {
@@ -180,10 +174,12 @@ impl NetworkNamespace {
     /// This is the child process, it will actually create the namespace
     /// resources. It creates the folder and namespace file.
     /// Returns the namespace file path
-    pub fn child_process_create_ns(netns_path: &Path) -> Result<(), Error> {
+    pub fn child_process_create_ns(ns_name: String) -> Result<String, Error> {
         log::trace!("child_process will create the namespace");
 
-        let dir_path = netns_path.parent().unwrap();
+        let mut netns_path = String::new();
+
+        let dir_path = Path::new(NETNS_PATH);
         let mut mkdir_mode = Mode::empty();
         let mut open_flags = OFlag::empty();
         let mut mount_flags = nix::mount::MsFlags::empty();
@@ -200,6 +196,9 @@ impl NetworkNamespace {
         open_flags.insert(OFlag::O_RDONLY);
         open_flags.insert(OFlag::O_CREAT);
         open_flags.insert(OFlag::O_EXCL);
+
+        netns_path.push_str(NETNS_PATH);
+        netns_path.push_str(&ns_name);
 
         // creating namespaces folder if not exists
         #[allow(clippy::collapsible_if)]
@@ -276,15 +275,16 @@ impl NetworkNamespace {
             return Err(Error::NamespaceError(err_msg));
         }
 
-        Ok(())
+        Ok(netns_path)
     }
 
     /// This function unshare the calling process and move into
     /// the given network namespace
     #[allow(unused)]
-    pub fn unshare_processing(ns_path: &Path) -> Result<(), Error> {
+    pub fn unshare_processing(netns_path: String) -> Result<(), Error> {
         let mut setns_flags = CloneFlags::empty();
         let mut open_flags = OFlag::empty();
+        let ns_path = Path::new(&netns_path);
 
         let none_fs = Path::new(&NONE_FS);
         let none_p4: Option<&Path> = None;
