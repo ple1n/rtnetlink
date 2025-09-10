@@ -192,7 +192,7 @@ impl RouteMessageBuilder<Ipv4Addr> {
     }
 
     /// Sets the destination address prefix.
-    pub fn destination_prefix(
+    pub fn destination(
         mut self,
         addr: Ipv4Addr,
         prefix_length: u8,
@@ -261,7 +261,7 @@ impl RouteMessageBuilder<Ipv6Addr> {
     }
 
     /// Sets the destination address prefix.
-    pub fn destination_prefix(
+    pub fn destination(
         mut self,
         addr: Ipv6Addr,
         prefix_length: u8,
@@ -372,7 +372,7 @@ impl RouteMessageBuilder<IpAddr> {
     }
 
     /// Sets the destination address prefix.
-    pub fn destination_prefix(
+    pub fn destination(
         mut self,
         addr: IpAddr,
         prefix_length: u8,

@@ -69,7 +69,7 @@ async fn add_route_ecmp(
     handle: Handle,
 ) -> Result<(), Error> {
     let route = RouteMessageBuilder::<Ipv4Addr>::new()
-        .destination_prefix(dst.ip(), dst.prefix())
+        .destination(dst.ip(), dst.prefix())
         .multipath(vec![
             RouteNextHopBuilder::new_ipv4()
                 .interface(iface_index)

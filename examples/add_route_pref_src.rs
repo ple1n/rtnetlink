@@ -54,7 +54,7 @@ async fn add_route(
         .index;
 
     let route = RouteMessageBuilder::<Ipv4Addr>::new()
-        .destination_prefix(dest.ip(), dest.prefix())
+        .destination(dest.ip(), dest.prefix())
         .output_interface(iface_idx)
         .pref_source(source)
         .build();
