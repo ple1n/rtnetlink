@@ -2,17 +2,19 @@
 
 use futures::Stream;
 use netlink_packet_core::NetlinkMessage;
-use netlink_packet_route::RtnlMessage;
+use netlink_packet_route::RouteNetlinkMessage;
 use netlink_proto::{sys::SocketAddr, ConnectionHandle};
 
 use crate::{
-    AddressHandle, Error, LinkHandle, NeighbourHandle, QDiscHandle,
-    RouteHandle, RuleHandle, TrafficChainHandle, TrafficClassHandle,
-    TrafficFilterHandle,
+    AddressHandle, Error, LinkHandle, NeighbourHandle, RouteHandle, RuleHandle,
+};
+#[cfg(not(target_os = "freebsd"))]
+use crate::{
+    QDiscHandle, TrafficChainHandle, TrafficClassHandle, TrafficFilterHandle,
 };
 
 #[derive(Clone, Debug)]
-pub struct Handle(ConnectionHandle<RtnlMessage>);
+pub struct Handle(ConnectionHandle<RouteNetlinkMessage>);
 
 impl Handle {
     pub fn new(conn: ConnectionHandle<RtnlMessage>) -> Self {
@@ -21,8 +23,9 @@ impl Handle {
 
     pub fn request(
         &mut self,
-        message: NetlinkMessage<RtnlMessage>,
-    ) -> Result<impl Stream<Item = NetlinkMessage<RtnlMessage>>, Error> {
+        message: NetlinkMessage<RouteNetlinkMessage>,
+    ) -> Result<impl Stream<Item = NetlinkMessage<RouteNetlinkMessage>>, Error>
+    {
         self.0
             .request(message, SocketAddr::new(0, 0))
             .map_err(|_| Error::RequestFailed)
@@ -30,7 +33,7 @@ impl Handle {
 
     pub fn notify(
         &mut self,
-        msg: NetlinkMessage<RtnlMessage>,
+        msg: NetlinkMessage<RouteNetlinkMessage>,
     ) -> Result<(), Error> {
         self.0
             .notify(msg, SocketAddr::new(0, 0))
@@ -70,24 +73,28 @@ impl Handle {
 
     /// Create a new handle, specifically for traffic control qdisc requests
     /// (equivalent to `tc qdisc show` commands)
+    #[cfg(not(target_os = "freebsd"))]
     pub fn qdisc(&self) -> QDiscHandle {
         QDiscHandle::new(self.clone())
     }
 
     /// Create a new handle, specifically for traffic control class requests
     /// (equivalent to `tc class show dev <interface_name>` commands)
+    #[cfg(not(target_os = "freebsd"))]
     pub fn traffic_class(&self, ifindex: i32) -> TrafficClassHandle {
         TrafficClassHandle::new(self.clone(), ifindex)
     }
 
     /// Create a new handle, specifically for traffic control filter requests
     /// (equivalent to `tc filter show dev <interface_name>` commands)
+    #[cfg(not(target_os = "freebsd"))]
     pub fn traffic_filter(&self, ifindex: i32) -> TrafficFilterHandle {
         TrafficFilterHandle::new(self.clone(), ifindex)
     }
 
     /// Create a new handle, specifically for traffic control chain requests
     /// (equivalent to `tc chain show dev <interface_name>` commands)
+    #[cfg(not(target_os = "freebsd"))]
     pub fn traffic_chain(&self, ifindex: i32) -> TrafficChainHandle {
         TrafficChainHandle::new(self.clone(), ifindex)
     }

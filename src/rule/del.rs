@@ -2,10 +2,11 @@
 
 use futures::stream::StreamExt;
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
-use netlink_packet_route::{RtnlMessage, RuleMessage};
+use netlink_packet_route::{rule::RuleMessage, RouteNetlinkMessage};
 
 use crate::{try_nl, Error, Handle};
 
+#[derive(Debug, Clone)]
 pub struct RuleDelRequest {
     handle: Handle,
     message: RuleMessage,
@@ -23,7 +24,8 @@ impl RuleDelRequest {
             message,
         } = self;
 
-        let mut req = NetlinkMessage::from(RtnlMessage::DelRule(message));
+        let mut req =
+            NetlinkMessage::from(RouteNetlinkMessage::DelRule(message));
         req.header.flags = NLM_F_REQUEST | NLM_F_ACK;
         let mut response = handle.request(req)?;
         while let Some(msg) = response.next().await {

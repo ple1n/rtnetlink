@@ -2,11 +2,14 @@
 
 use futures::{
     future::{self, Either},
-    stream::{StreamExt, TryStream},
+    stream::{Stream, StreamExt},
     FutureExt,
 };
 use netlink_packet_core::{NetlinkMessage, NLM_F_DUMP, NLM_F_REQUEST};
-use netlink_packet_route::{link::nlas::Nla, LinkMessage, RtnlMessage};
+use netlink_packet_route::{
+    link::{LinkAttribute, LinkExtentMask, LinkMessage},
+    AddressFamily, RouteNetlinkMessage,
+};
 
 use crate::{try_rtnl, Error, Handle};
 
@@ -31,23 +34,30 @@ impl LinkGetRequest {
         }
     }
 
-    /// Setting filter mask(e.g. RTEXT_FILTER_BRVLAN and etc)
-    pub fn set_filter_mask(mut self, family: u8, filter_mask: u32) -> Self {
+    /// Setting filter mask
+    pub fn set_filter_mask(
+        mut self,
+        family: AddressFamily,
+        filter_mask: Vec<LinkExtentMask>,
+    ) -> Self {
         self.message.header.interface_family = family;
-        self.message.nlas.push(Nla::ExtMask(filter_mask));
+        self.message
+            .attributes
+            .push(LinkAttribute::ExtMask(filter_mask));
         self
     }
 
  
     /// Execute the request
-    pub fn execute(self) -> impl TryStream<Ok = LinkMessage, Error = Error> {
+    pub fn execute(self) -> impl Stream<Item = Result<LinkMessage, Error>> {
         let LinkGetRequest {
             mut handle,
             message,
             dump,
         } = self;
 
-        let mut req = NetlinkMessage::from(RtnlMessage::GetLink(message));
+        let mut req =
+            NetlinkMessage::from(RouteNetlinkMessage::GetLink(message));
 
         if dump {
             req.header.flags = NLM_F_REQUEST | NLM_F_DUMP;
@@ -56,10 +66,9 @@ impl LinkGetRequest {
         }
 
         match handle.request(req) {
-            Ok(response) => Either::Left(
-                response
-                    .map(move |msg| Ok(try_rtnl!(msg, RtnlMessage::NewLink))),
-            ),
+            Ok(response) => Either::Left(response.map(move |msg| {
+                Ok(try_rtnl!(msg, RouteNetlinkMessage::NewLink))
+            })),
             Err(e) => Either::Right(
                 future::err::<LinkMessage, Error>(e).into_stream(),
             ),
@@ -86,7 +95,7 @@ impl LinkGetRequest {
     /// older, consider filtering the resulting stream of links.
     pub fn match_name(mut self, name: String) -> Self {
         self.dump = false;
-        self.message.nlas.push(Nla::IfName(name));
+        self.message.attributes.push(LinkAttribute::IfName(name));
         self
     }
 }

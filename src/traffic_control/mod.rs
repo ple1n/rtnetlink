@@ -1,19 +1,25 @@
 // SPDX-License-Identifier: MIT
 
-mod handle;
-pub use self::handle::*;
-
-mod get;
-pub use self::get::*;
-
-mod add_qdisc;
-pub use self::add_qdisc::*;
-
-mod del_qdisc;
-pub use self::del_qdisc::*;
-
 mod add_filter;
-pub use self::add_filter::*;
-
+mod add_qdisc;
+mod del_filter;
+mod del_qdisc;
+mod get;
+mod handle;
 #[cfg(test)]
 mod test;
+
+pub use self::{
+    add_filter::TrafficFilterNewRequest,
+    add_qdisc::QDiscNewRequest,
+    del_filter::TrafficFilterDelRequest,
+    del_qdisc::QDiscDelRequest,
+    get::{
+        QDiscGetRequest, TrafficChainGetRequest, TrafficClassGetRequest,
+        TrafficFilterGetRequest,
+    },
+    handle::{
+        QDiscHandle, TrafficChainHandle, TrafficClassHandle,
+        TrafficFilterHandle,
+    },
+};

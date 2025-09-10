@@ -1,5 +1,9 @@
 name: CI
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -14,6 +18,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Install necessary dependencies
+        run: |
+          sudo apt update
+          sudo apt install "linux-modules-extra-$(uname -r)"
+          sudo modprobe vrf
 
       - name: Install Rust Stable
         run: |

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use std::net::IpAddr;
+
+use netlink_packet_route::neighbour::NeighbourMessage;
+
 use crate::{
     Handle, NeighbourAddRequest, NeighbourDelRequest, NeighbourGetRequest,
 };
-use netlink_packet_route::NeighbourMessage;
-use std::net::IpAddr;
 
 pub struct NeighbourHandle(Handle);
 
@@ -23,6 +25,7 @@ impl NeighbourHandle {
         NeighbourAddRequest::new(self.0.clone(), index, destination)
     }
 
+    #[cfg(not(target_os = "freebsd"))]
     /// Add a new fdb entry (equivalent to `bridge fdb add`)
     pub fn add_bridge(&self, index: u32, lla: &[u8]) -> NeighbourAddRequest {
         NeighbourAddRequest::new_bridge(self.0.clone(), index, lla)

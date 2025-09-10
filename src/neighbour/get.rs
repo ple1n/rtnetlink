@@ -2,14 +2,15 @@
 
 use futures::{
     future::{self, Either},
-    stream::{StreamExt, TryStream},
+    stream::{Stream, StreamExt},
     FutureExt,
 };
 use netlink_packet_core::{
     NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    neighbour::NeighbourMessage, RtnlMessage, NTF_PROXY,
+    neighbour::{NeighbourFlags, NeighbourMessage},
+    RouteNetlinkMessage,
 };
 
 use crate::{Error, Handle, IpVersion};
@@ -28,7 +29,7 @@ impl NeighbourGetRequest {
     /// List neighbor proxies in the system (equivalent to: `ip neighbor show
     /// proxy`).
     pub fn proxies(mut self) -> Self {
-        self.message.header.flags |= NTF_PROXY;
+        self.message.header.flags |= NeighbourFlags::Proxy;
         self
     }
 
@@ -40,13 +41,14 @@ impl NeighbourGetRequest {
     /// Execute the request
     pub fn execute(
         self,
-    ) -> impl TryStream<Ok = NeighbourMessage, Error = Error> {
+    ) -> impl Stream<Item = Result<NeighbourMessage, Error>> {
         let NeighbourGetRequest {
             mut handle,
             message,
         } = self;
 
-        let mut req = NetlinkMessage::from(RtnlMessage::GetNeighbour(message));
+        let mut req =
+            NetlinkMessage::from(RouteNetlinkMessage::GetNeighbour(message));
         req.header.flags = NLM_F_REQUEST | NLM_F_DUMP;
 
         match handle.request(req) {
@@ -54,7 +56,7 @@ impl NeighbourGetRequest {
                 let (header, payload) = msg.into_parts();
                 match payload {
                     NetlinkPayload::InnerMessage(
-                        RtnlMessage::NewNeighbour(msg),
+                        RouteNetlinkMessage::NewNeighbour(msg),
                     ) => Ok(msg),
                     NetlinkPayload::Error(err) => Err(Error::NetlinkError(err)),
                     _ => Err(Error::UnexpectedMessage(NetlinkMessage::new(

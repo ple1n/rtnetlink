@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_core::{NLM_F_CREATE, NLM_F_EXCL, NLM_F_REPLACE};
+use netlink_packet_route::tc::TcMessage;
+
 use super::{
     QDiscDelRequest, QDiscGetRequest, QDiscNewRequest, TrafficChainGetRequest,
-    TrafficClassGetRequest, TrafficFilterGetRequest, TrafficFilterNewRequest,
+    TrafficClassGetRequest, TrafficFilterDelRequest, TrafficFilterGetRequest,
+    TrafficFilterNewRequest,
 };
-
 use crate::Handle;
-use netlink_packet_core::{NLM_F_CREATE, NLM_F_EXCL, NLM_F_REPLACE};
-use netlink_packet_route::TcMessage;
 
+#[derive(Debug, Clone)]
 pub struct QDiscHandle(Handle);
 
 impl QDiscHandle {
@@ -57,6 +59,7 @@ impl QDiscHandle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TrafficClassHandle {
     handle: Handle,
     ifindex: i32,
@@ -74,6 +77,7 @@ impl TrafficClassHandle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TrafficFilterHandle {
     handle: Handle,
     ifindex: i32,
@@ -100,6 +104,12 @@ impl TrafficFilterHandle {
         )
     }
 
+    /// Delete a filter from a node, don't replace if the object already exists.
+    /// ( equivalent to `tc filter del dev STRING`)
+    pub fn del(&mut self) -> TrafficFilterDelRequest {
+        TrafficFilterDelRequest::new(self.handle.clone(), self.ifindex)
+    }
+
     /// Change the filter, the handle cannot be changed and neither can the
     /// parent. In other words, change cannot move a node.
     /// ( equivalent to `tc filter change dev STRING`)
@@ -118,6 +128,7 @@ impl TrafficFilterHandle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TrafficChainHandle {
     handle: Handle,
     ifindex: i32,

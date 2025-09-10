@@ -2,11 +2,11 @@
 
 use futures::stream::StreamExt;
 use netlink_packet_core::{
-    NetlinkMessage, NetlinkPayload, NLM_F_ACK, NLM_F_EXCL, NLM_F_REQUEST,
+    NetlinkMessage, NetlinkPayload, NLM_F_ACK, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    link::nlas::{Nla, Prop},
-    LinkMessage, RtnlMessage,
+    link::{LinkAttribute, LinkMessage, Prop},
+    RouteNetlinkMessage,
 };
 
 use crate::{Error, Handle};
@@ -29,8 +29,9 @@ impl LinkDelPropRequest {
             mut handle,
             message,
         } = self;
-        let mut req = NetlinkMessage::from(RtnlMessage::DelLinkProp(message));
-        req.header.flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_EXCL;
+        let mut req =
+            NetlinkMessage::from(RouteNetlinkMessage::DelLinkProp(message));
+        req.header.flags = NLM_F_REQUEST | NLM_F_ACK;
 
         let mut response = handle.request(req)?;
         while let Some(message) = response.next().await {
@@ -54,7 +55,7 @@ impl LinkDelPropRequest {
             props.push(Prop::AltIfName(alt_ifname.to_string()));
         }
 
-        self.message.nlas.push(Nla::PropList(props));
+        self.message.attributes.push(LinkAttribute::PropList(props));
         self
     }
 }

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_route::rule::RuleMessage;
+
 use crate::{
     Handle, IpVersion, RuleAddRequest, RuleDelRequest, RuleGetRequest,
 };
-use netlink_packet_route::RuleMessage;
 
+#[derive(Debug, Clone)]
 pub struct RuleHandle(Handle);
 
 impl RuleHandle {

@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-use rtnetlink::new_connection;
-
+use rtnetlink::{new_connection, LinkVeth};
 #[tokio::main]
 async fn main() -> Result<(), String> {
     let (connection, handle, _) = new_connection().unwrap();
     tokio::spawn(connection);
+
     handle
         .link()
-        .add()
-        .veth("veth-rs-1".into(), "veth-rs-2".into())
+        .add(LinkVeth::new("veth1", "veth1-peer").build())
         .execute()
         .await
         .map_err(|e| format!("{e}"))

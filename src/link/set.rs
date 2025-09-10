@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-use std::os::unix::io::RawFd;
-
 use futures::stream::StreamExt;
 use netlink_packet_core::{
     NetlinkMessage, NLM_F_ACK, NLM_F_CREATE, NLM_F_EXCL, NLM_F_REQUEST,
 };
-use netlink_packet_route::{
-    link::nlas::Nla, LinkMessage, RtnlMessage, IFF_NOARP, IFF_PROMISC, IFF_UP,
-};
+use netlink_packet_route::{link::LinkMessage, RouteNetlinkMessage};
 
 use crate::{try_nl, Error, Handle};
 
@@ -18,9 +14,7 @@ pub struct LinkSetRequest {
 }
 
 impl LinkSetRequest {
-    pub(crate) fn new(handle: Handle, index: u32) -> Self {
-        let mut message = LinkMessage::default();
-        message.header.index = index;
+    pub(crate) fn new(handle: Handle, message: LinkMessage) -> Self {
         LinkSetRequest { handle, message }
     }
  
@@ -30,7 +24,8 @@ impl LinkSetRequest {
             mut handle,
             message,
         } = self;
-        let mut req = NetlinkMessage::from(RtnlMessage::SetLink(message));
+        let mut req =
+            NetlinkMessage::from(RouteNetlinkMessage::SetLink(message));
         req.header.flags =
             NLM_F_REQUEST | NLM_F_ACK | NLM_F_EXCL | NLM_F_CREATE;
 

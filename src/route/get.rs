@@ -4,19 +4,21 @@ use std::net::Ipv4Addr;
 
 use futures::{
     future::{self, Either},
-    stream::{StreamExt, TryStream},
+    stream::{Stream, StreamExt},
     FutureExt,
 };
-
 use netlink_packet_core::{NetlinkMessage, NLM_F_DUMP, NLM_F_REQUEST};
 use netlink_packet_route::{
     RouteFlags, RouteMessage, RtnlMessage, AF_INET, AF_INET6, RTN_UNSPEC,
     RTPROT_UNSPEC, RT_SCOPE_UNIVERSE, RT_TABLE_UNSPEC,
-    route::nlas::Nla
+    route::nlas::Nla,
+    route::{RouteAttribute, RouteMessage},
+    AddressFamily, RouteNetlinkMessage,
 };
 
 use crate::{try_rtnl, Error, Handle};
 
+#[derive(Debug, Clone)]
 pub struct RouteGetRequest {
     handle: Handle,
     message: RouteMessage,
@@ -32,35 +34,16 @@ pub enum IpVersion {
 }
 
 impl IpVersion {
-    pub(crate) fn family(self) -> u8 {
+    pub(crate) fn family(self) -> AddressFamily {
         match self {
-            IpVersion::V4 => AF_INET as u8,
-            IpVersion::V6 => AF_INET6 as u8,
+            IpVersion::V4 => AddressFamily::Inet,
+            IpVersion::V6 => AddressFamily::Inet6,
         }
     }
 }
 
 impl RouteGetRequest {
-    pub(crate) fn new(handle: Handle, ip_version: IpVersion) -> Self {
-        let mut message = RouteMessage::default();
-        message.header.address_family = ip_version.family();
-
-        // As per rtnetlink(7) documentation, setting the following
-        // fields to 0 gets us all the routes from all the tables
-        //
-        // > For RTM_GETROUTE, setting rtm_dst_len and rtm_src_len to 0
-        // > means you get all entries for the specified routing table.
-        // > For the other fields, except rtm_table and rtm_protocol, 0
-        // > is the wildcard.
-        message.header.destination_prefix_length = 0;
-        message.header.source_prefix_length = 0;
-        message.header.scope = RT_SCOPE_UNIVERSE;
-        message.header.kind = RTN_UNSPEC;
-
-        // I don't know if these two fields matter
-        message.header.table = RT_TABLE_UNSPEC;
-        message.header.protocol = RTPROT_UNSPEC;
-
+    pub(crate) fn new(handle: Handle, message: RouteMessage) -> Self {
         RouteGetRequest { handle, message }
     }
 
@@ -94,14 +77,23 @@ impl RouteGetRequest {
             message,
         } = self;
 
-        let mut req = NetlinkMessage::from(RtnlMessage::GetRoute(message));
-        req.header.flags = NLM_F_REQUEST | NLM_F_DUMP;
+        let has_dest = message
+            .attributes
+            .iter()
+            .any(|attr| matches!(attr, RouteAttribute::Destination(_)));
+
+        let mut req =
+            NetlinkMessage::from(RouteNetlinkMessage::GetRoute(message));
+        req.header.flags = NLM_F_REQUEST;
+
+        if !has_dest {
+            req.header.flags |= NLM_F_DUMP;
+        }
 
         match handle.request(req) {
-            Ok(response) => Either::Left(
-                response
-                    .map(move |msg| Ok(try_rtnl!(msg, RtnlMessage::NewRoute))),
-            ),
+            Ok(response) => Either::Left(response.map(move |msg| {
+                Ok(try_rtnl!(msg, RouteNetlinkMessage::NewRoute))
+            })),
             Err(e) => Either::Right(
                 future::err::<RouteMessage, Error>(e).into_stream(),
             ),
