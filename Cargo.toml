@@ -1,5 +1,5 @@
 [package]
-name = "rtnetlink"
+name = "nsproxy-rtnetlink"
 version = "0.18.1"
 authors = ["Corentin Henry <corentinhenry@gmail.com>"]
 edition = "2021"
@@ -21,11 +21,11 @@ smol_socket = ["netlink-proto/smol_socket", "async-global-executor"]
 futures = "0.3.11"
 log = "0.4.8"
 thiserror = "1"
-netlink-sys.workspace = true
-netlink-packet-utils.workspace = true
-netlink-packet-route.workspace = true
-netlink-packet-core.workspace = true
-netlink-proto.workspace = true
+netlink-sys = { package = "nsproxy-netlink-sys", path = "../netlink-sys" }
+netlink-packet-utils = { package = "nsproxy-netlink-packet-utils", path = "../netlink-packet-utils" }
+netlink-packet-route = { package = "nsproxy-netlink-packet-route", path = "../netlink-packet-route" }
+netlink-packet-core = { package = "nsproxy-netlink-packet-core", path = "../netlink-packet-core" }
+netlink-proto = { package = "nsproxy-netlink-proto", path = "../netlink-proto" }
 nix = { version = "0.29", default-features = false, features = [
     "fs",
     "mount",
